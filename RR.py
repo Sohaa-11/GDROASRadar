@@ -119,23 +119,91 @@ if uploaded_file:
         )
 
         # 🚀 Step 1: Tabs to reduce scroll clutter
-        tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
             "📊 Performance Table",
             "📈 Growth Rates",
             "📦 Channels Campaigns Comparison",
             "🎯 Break-Even Analysis",
-            "📊 Visualizations"
+            "📊 Visualizations",
+            "💡 User Manual"
         ])
 
         with tab1:
             st.markdown("### 📊 Current Campaign Performance")
             st.write(f"Network: {selected_channel}")
             st.write(f"Campaign: {selected_network}")
+
             if not df_filtered.empty:
-                display_columns = [col for col in df_filtered.columns if col not in ['week_str', 'week_dt','channel', 'app', 'campaign_network', 'attribution_clicks', 'attribution_impressions', 'ecpi' , 'retention_rate_d3','roas_ad_d0' ,'roas_ad_d7' , 'roas_ad_d14' , 'roas_ad_d28', 'roas_ad_d45' , 'roas_ad_d60', 'roas_ad_d75', 'roas_ad_d90', 'roas_ad_d120' , 'roas_iap_d0' , 'roas_iap_d7' , 'roas_iap_d14' , 'roas_iap_d28' , 'roas_iap_d30', 'roas_ad_d30' ,'roas_iap_d45', 'roas_iap_d60', 'roas_iap_d75', 'roas_iap_d90', 'roas_iap_d120']]
+                display_columns = [col for col in df_filtered.columns if col not in [
+                    'week_str', 'week_dt', 'channel', 'app', 'campaign_network',
+                    'attribution_clicks', 'attribution_impressions', 'ecpi', 'retention_rate_d3',
+                    'roas_ad_d0', 'roas_ad_d7', 'roas_ad_d14', 'roas_ad_d28', 'roas_ad_d45',
+                    'roas_ad_d60', 'roas_ad_d75', 'roas_ad_d90', 'roas_ad_d120',
+                    'roas_iap_d0', 'roas_iap_d7', 'roas_iap_d14', 'roas_iap_d28', 'roas_iap_d30',
+                    'roas_ad_d30', 'roas_iap_d45', 'roas_iap_d60', 'roas_iap_d75',
+                    'roas_iap_d90', 'roas_iap_d120'
+                ]]
                 st.dataframe(df_filtered[display_columns], use_container_width=True)
+
+                # 📈 Weekly Trend Visualizer (Dual Y-Axis)
+                st.markdown("### 📈 Weekly Trend Visualizer")
+
+                numeric_columns = df_filtered.select_dtypes(include='number').columns.tolist()
+                default_selection = [col for col in ['all_revenue', 'custom_roas', 'cost'] if col in numeric_columns]
+
+
+                selected_y_cols = st.multiselect(
+                    "Select up to 5 columns to plot (Y-axis)", 
+                    options=numeric_columns,
+                    default=default_selection,
+                    max_selections=5
+                )
+
+                right_axis_keywords = ['roas', 'retention', 'rate', 'ctr']
+                use_right_axis = lambda col: any(key in col.lower() for key in right_axis_keywords)
+
+                if selected_y_cols:
+                    fig = go.Figure()
+
+                    for col in selected_y_cols:
+                        yaxis = 'y2' if use_right_axis(col) else 'y1'
+                        fig.add_trace(go.Scatter(
+                            x=df_filtered['week_dt'],
+                            y=df_filtered[col],
+                            mode='lines+markers',
+                            name=col,
+                            yaxis=yaxis,
+                            hovertemplate=f'%{{y:.2f}}<extra>{col}</extra>'
+                        ))
+
+                    fig.update_layout(
+                        title="📈 Weekly Trend for Selected Metrics",
+                        xaxis=dict(title="Week", tickformat="%Y-%m-%d"),
+                        yaxis=dict(
+                            title="Primary Axis",  
+                            side="left"
+                        ),
+                        yaxis2=dict(
+                            title="Secondary Axis", 
+                            overlaying="y", 
+                            side="right", 
+                            showgrid=False
+                        ),
+                        legend=dict(
+                            orientation="h",
+                            yanchor="bottom",
+                            y=1.02,
+                            xanchor="right",
+                            x=1
+                        )
+                    )
+
+                    st.plotly_chart(fig, use_container_width=True)
+
             else:
                 st.warning("⚠️ No data available for the selected campaign.")
+
+
 
         # ROAS Ratios Calculation
         day_intervals = [(0, 7), (7, 14), (14, 28), (28, 45), (45, 60), (60, 75), (75, 90)]
@@ -818,3 +886,62 @@ if uploaded_file:
                     st.plotly_chart(fig_mintegral_growth, use_container_width=True)
                 else:
                     st.warning("⚠️ No valid data available for Mintegral campaigns line graph.") 
+
+
+
+        with tab6:
+            st.subheader("💡 User Manual – How to Use GD ROAS Radar")
+
+            st.markdown(
+            "Welcome to **GD ROAS Radar**!⚡ This dashboard helps you evaluate your campaigns' ROAS performance over different maturity windows and identify break-even points with confidence.  \n"
+            "Here’s how to use it:"
+            )
+
+            with st.expander("📂 1. Upload Your CSV File"):
+                st.markdown("""
+                - "📂 Upload your [Adjust CSV file](https://suite.adjust.com/datascape/report?app_token__in=n1dbmx5fs8ow&utc_offset=%2B00%3A00&reattributed=all&attribution_source=first&attribution_type=all&ad_spend_mode=network&date_period=-127d%3A-5d&cohort_maturity=mature&sandbox=false&channel_id__in=partner_-300%2Cpartner_254%2Cpartner_257%2Cpartner_7%2Cpartner_2725%2Cpartner_34%2Cpartner_2127%2Cpartner_2360%2Cpartner_182%2Cpartner_100%2Cpartner_369%7Cnetwork_Mintegral%2Cpartner_56%2Cpartner_490%7Cnetwork_NativeX%2Cpartner_1770%2Cpartner_2682%2Cpartner_217%2Cpartner_1718%2Cpartner_560%2Cnetwork_SpinnerBattle+in+Ragdoll%2Cnetwork_Unknown+Devices%2Cnetwork_Untrusted+Devices%2Cnetwork_Twisted_in_Ragdoll%2Cnetwork_Unknown+Devices+%28restored+1ekeu2wz%29%2Cnetwork_Ragdoll_CP%2Cnetwork_Disabled+Third+Party+Sharing+Before+Install%2Cnetwork_Ragdoll_X_Twisted%2Cnetwork_Unknown+Devices+%28restored+1esqjar0%29%2Cnetwork_Meta%2Cnetwork_Measurement+Consent+Updated+Before+Install%2Cnetwork_Unknown+Devices+%28restored+1770rwkr%29%2Cnetwork_Unknown&applovin_mode=probabilistic&ironsource_mode=ironsource&digital_turbine_mode=digital_turbine&dimensions=app%2Cchannel%2Ccampaign_network%2Cweek&metrics=installs%2Cinstalls_per_mile%2Ccost%2Call_revenue%2Cgross_profit%2Ccustom_roas%2Cattribution_clicks%2Cattribution_impressions%2Cnetwork_ctr%2Cecpi%2Cretention_rate_d1%2Cretention_rate_d3%2Cretention_rate_d7%2Cretention_rate_d14%2Cretention_rate_d30%2Croas_d0%2Croas_d3%2Croas_d7%2Croas_d14%2Croas_d30%2Croas_d45%2Croas_d60%2Croas_d75%2Croas_d90%2Croas_d120%2Croas_ad_d0%2Croas_ad_d7%2Croas_ad_d14%2Croas_ad_d30%2Croas_ad_d45%2Croas_ad_d60%2Croas_ad_d75%2Croas_ad_d90%2Croas_ad_d120%2Croas_iap_d0%2Croas_iap_d7%2Croas_iap_d14%2Croas_iap_d30%2Croas_iap_d45%2Croas_iap_d60%2Croas_iap_d75%2Croas_iap_d90%2Croas_iap_d120&sort=app&table_view=pivot&parent_report_id=243954)" – this link will take you directly to the Adjust report you need to export.
+                - Upload your Adjust report using the file uploader at the top of the dashboard.
+                - The file must include these required columns:
+                `app`, `channel`, `campaign_network`, `week`, `cost`, `installs`, `roas_d0`, `roas_d7`, `roas_d14`, ..., `roas_d120`.
+                """)
+
+            with st.expander("🎯 2. Select Channel and Campaign"):
+                st.markdown("""
+                - Use the **Channel** dropdown to pick an ad network (e.g., Applovin, Mintegral).
+                - Then select a **Campaign** under that network to see detailed performance data.
+                """)
+
+            with st.expander("🧮 3. Overview of Dashboard Tabs"):
+                st.markdown("""
+            <ul>
+                <li><b style="color:#FF6F61">📊 Performance Table</b>: View installs, cost, CPI, and ROAS values — the current performance of your campaign.</li>
+                <li><b style="color:#FF6F61">📈 Growth Rates</b>: Shows ROAS growth intervals (e.g., D0→D7, D7→D14)</li>
+                <li><b style="color:#FF6F61">📦 Channels Campaigns Comparison</b>: Compare campaigns within Applovin and Mintegral to evaluate which performs better. - (⚠️ The table reflects data from the most recent 4 fully matured weeks only)</li>
+                <li><b style="color:#FF6F61">🎯 Break-Even Analysis</b>: Enter a goal (D0/D7/D28) and see future ROAS projections. - (⚠️ The table reflects data from the most recent 4 fully matured weeks only)</li>
+                <li><b style="color:#FF6F61">📊 Visualizations</b>: Interactive charts showing spend, revenue, ROAS trends, and growth.</li>
+                </ul>
+                    """, unsafe_allow_html=True)
+
+
+            with st.expander("🔍 4. ROAS Growth Calculation"):
+                st.markdown("""
+                - ROAS Growth is calculated as:
+                ```
+                ROAS at end of interval / ROAS at start of interval
+                ```
+                - Example:  
+                If ROAS D14 = 1.0 and ROAS D7 = 0.8 →  
+                `1.0 / 0.8 = 1.25` → A 25% improvement between D7 and D14.
+                """)
+
+            with st.expander("⚠️ 5. Troubleshooting Guide"):
+                st.markdown("""
+                | Issue                        | Solution                                                 |
+                |-----------------------------|----------------------------------------------------------|
+                | Missing required columns    | Check the error message and verify all necessary fields. |
+                | Date parsing fails          | Make sure the `week` column uses `YYYY-MM-DD` format.    |
+                | CPI shows as NaN or inf     | Ensure `installs` are not zero.                          |
+                | ROAS Growth = 0             | Check for missing or zero ROAS values in those columns.  |
+                | “No valid data” warning     | Ensure valid dates exist and are correctly parsed.       |
+                """)
+
