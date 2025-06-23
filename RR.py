@@ -37,10 +37,6 @@ unsafe_allow_html=True
 )
 uploaded_file = st.file_uploader("", type=["csv"])
 
-
-import pandas as pd
-import streamlit as st
-
 if uploaded_file:
     try:
         # Check if the file is a CSV based on extension
